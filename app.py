@@ -9,12 +9,21 @@ st.set_page_config(page_title="AI Talking Video Generator", page_icon="🎥", la
 st.title("🎬 Professional AI Talking Video Generator")
 st.write("Generate real MP4 videos with custom avatar motion, multi-character voices, and AI synchronization!")
 
-# --- SECURE BACKEND API CONFIGURATION ---
-# یہ لائن پس پردہ (Backend) سے آپ کی محفوظ کردہ سیک্রেট کی خود بخود اٹھا لیتی ہے
+# --- SECURE API TOKEN LOADING ---
+# Try loading from Streamlit Secrets first, otherwise fallback safely
+api_token = ""
 try:
-    os.environ["REPLICATE_API_TOKEN"] = st.secrets["REPLICATE_API_TOKEN"]
+    if "REPLICATE_API_TOKEN" in st.secrets:
+        api_token = st.secrets["REPLICATE_API_TOKEN"]
 except Exception:
     pass
+
+# If not found in secrets, check environment variables
+if not api_token:
+    api_token = os.environ.get("REPLICATE_API_TOKEN", "")
+
+if api_token:
+    os.environ["REPLICATE_API_TOKEN"] = api_token
 
 # 1. Multi-Image Upload Option
 st.subheader("1. Upload Avatar Images")
@@ -64,8 +73,8 @@ dialogue_text = st.text_area(
 # 5. Generate Button
 st.subheader("Generate Synchronized MP4 Video")
 if st.button("Generate MP4 Video & Voice"):
-    if not os.environ.get("REPLICATE_API_TOKEN"):
-        st.error("⚠️ Security Error: Replicate API Token is missing in Streamlit Secrets!")
+    if not api_token:
+        st.error("⚠️ Security Error: Replicate API Token is missing! Please make sure you added it in Streamlit Secrets.")
     elif not uploaded_images:
         st.warning("Please upload at least one avatar image!")
     elif not dialogue_text.strip():
