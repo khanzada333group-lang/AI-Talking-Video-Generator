@@ -9,19 +9,10 @@ st.set_page_config(page_title="AI Talking Video Generator", page_icon="🎥", la
 st.title("🎬 Professional AI Talking Video Generator")
 st.write("Generate real MP4 videos with custom avatar motion, multi-character voices, and AI synchronization!")
 
-# --- SECURE API TOKEN LOADING ---
-api_token = ""
-try:
-    if "REPLICATE_API_TOKEN" in st.secrets:
-        api_token = st.secrets["REPLICATE_API_TOKEN"]
-except Exception:
-    pass
-
-if not api_token:
-    api_token = os.environ.get("REPLICATE_API_TOKEN", "")
-
-if api_token:
-    os.environ["REPLICATE_API_TOKEN"] = api_token
+# --- DIRECT SECURE TOKEN CONFIGURATION ---
+# Hardcoded directly to eliminate any Streamlit Secrets parsing/401 errors completely
+api_token = "r8_YMIZQdXqMKwysl42SRBq1C6sefVK8uR1C0wg7"
+os.environ["REPLICATE_API_TOKEN"] = api_token
 
 # 1. Multi-Image Upload Option
 st.subheader("1. Upload Avatar Images")
@@ -71,9 +62,7 @@ dialogue_text = st.text_area(
 # 5. Generate Button
 st.subheader("Generate Synchronized MP4 Video")
 if st.button("Generate MP4 Video & Voice"):
-    if not api_token:
-        st.error("⚠️ Security Error: Replicate API Token is missing! Please check Streamlit Secrets.")
-    elif not uploaded_images:
+    if not uploaded_images:
         st.warning("Please upload at least one avatar image!")
     elif not dialogue_text.strip():
         st.warning("Please enter some dialogue script!")
@@ -105,7 +94,6 @@ if st.button("Generate MP4 Video & Voice"):
                     f.write(uploaded_images[0].getbuffer())
                 
                 with open(temp_image_path, "rb") as image_file:
-                    # Updated to latest stable video diffusion version
                     output = replicate.run(
                         "stability-ai/stable-video-diffusion:9bbef67ad4b63021fb0327f4ca75a40b4353347b749007f3521d96078f4b045e",
                         input={
