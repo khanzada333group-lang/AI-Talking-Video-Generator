@@ -9,9 +9,12 @@ st.set_page_config(page_title="AI Talking Video Generator", page_icon="🎥", la
 st.title("🎬 Professional AI Talking Video Generator")
 st.write("Generate real MP4 videos with custom avatar motion, multi-character voices, and AI synchronization!")
 
-# --- SECURE API KEY (Hidden from visitors) ---
-# آپ اپنی اصلی API Key یہاں نیچے کوٹس کے اندر پیسٹ کر دیں:
-os.environ["REPLICATE_API_TOKEN"] = "your_replicate_api_key_here"
+# --- SECURE BACKEND API CONFIGURATION ---
+# یہ لائن پس پردہ (Backend) سے آپ کی محفوظ کردہ سیک্রেট کی خود بخود اٹھا لیتی ہے
+try:
+    os.environ["REPLICATE_API_TOKEN"] = st.secrets["REPLICATE_API_TOKEN"]
+except Exception:
+    pass
 
 # 1. Multi-Image Upload Option
 st.subheader("1. Upload Avatar Images")
@@ -61,7 +64,9 @@ dialogue_text = st.text_area(
 # 5. Generate Button
 st.subheader("Generate Synchronized MP4 Video")
 if st.button("Generate MP4 Video & Voice"):
-    if not uploaded_images:
+    if not os.environ.get("REPLICATE_API_TOKEN"):
+        st.error("⚠️ Security Error: Replicate API Token is missing in Streamlit Secrets!")
+    elif not uploaded_images:
         st.warning("Please upload at least one avatar image!")
     elif not dialogue_text.strip():
         st.warning("Please enter some dialogue script!")
