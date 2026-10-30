@@ -9,27 +9,9 @@ st.set_page_config(page_title="AI Talking Video Generator", page_icon="🎥", la
 st.title("🎬 Professional AI Talking Video Generator")
 st.write("Generate real MP4 videos with custom avatar motion, multi-character voices, and AI synchronization!")
 
-# Sidebar - API Key Configuration with Session State persistence
-st.sidebar.header("🔑 API Settings")
-
-# Initialize session state for API key if it doesn't exist
-if "api_key" not in st.session_state:
-    st.session_state["api_key"] = ""
-
-# Text input connected to session state
-entered_key = st.sidebar.text_input(
-    "Enter Replicate API Key:", 
-    value=st.session_state["api_key"], 
-    type="password", 
-    help="Required to render real MP4 video via SVD cloud servers."
-)
-
-# Update session state when user inputs key
-if entered_key:
-    st.session_state["api_key"] = entered_key
-    os.environ["REPLICATE_API_TOKEN"] = entered_key
-
-api_key = st.session_state["api_key"]
+# --- SECURE API KEY (Hidden from visitors) ---
+# آپ اپنی اصلی API Key یہاں نیچے کوٹس کے اندر پیسٹ کر دیں:
+os.environ["REPLICATE_API_TOKEN"] = "your_replicate_api_key_here"
 
 # 1. Multi-Image Upload Option
 st.subheader("1. Upload Avatar Images")
@@ -79,9 +61,7 @@ dialogue_text = st.text_area(
 # 5. Generate Button
 st.subheader("Generate Synchronized MP4 Video")
 if st.button("Generate MP4 Video & Voice"):
-    if not api_key:
-        st.warning("⚠️ Please enter your Replicate API Key in the sidebar first!")
-    elif not uploaded_images:
+    if not uploaded_images:
         st.warning("Please upload at least one avatar image!")
     elif not dialogue_text.strip():
         st.warning("Please enter some dialogue script!")
