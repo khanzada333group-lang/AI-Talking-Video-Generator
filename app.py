@@ -10,7 +10,6 @@ st.title("🎬 Professional AI Talking Video Generator")
 st.write("Generate real MP4 videos with custom avatar motion, multi-character voices, and AI synchronization!")
 
 # --- SECURE API TOKEN LOADING ---
-# Try loading from Streamlit Secrets first, otherwise fallback safely
 api_token = ""
 try:
     if "REPLICATE_API_TOKEN" in st.secrets:
@@ -18,7 +17,6 @@ try:
 except Exception:
     pass
 
-# If not found in secrets, check environment variables
 if not api_token:
     api_token = os.environ.get("REPLICATE_API_TOKEN", "")
 
@@ -56,11 +54,11 @@ with col2:
         ["English", "Japanese", "Urdu", "Spanish", "French", "German"]
     )
 
-# 3. Video Motion & Action Prompt Option
+# 3. Video Motion Prompt
 st.subheader("3. Video Motion & Action Prompt")
 video_prompt = st.text_input(
-    "Describe body actions, facial expressions, or movement details:",
-    placeholder="e.g., gentle nodding, smiling, child laughing, expressive gestures..."
+    "Describe body actions or facial expressions:",
+    placeholder="e.g., gentle nodding, smiling, expressive gestures..."
 )
 
 # 4. Dialogue Script
@@ -74,15 +72,14 @@ dialogue_text = st.text_area(
 st.subheader("Generate Synchronized MP4 Video")
 if st.button("Generate MP4 Video & Voice"):
     if not api_token:
-        st.error("⚠️ Security Error: Replicate API Token is missing! Please make sure you added it in Streamlit Secrets.")
+        st.error("⚠️ Security Error: Replicate API Token is missing! Please check Streamlit Secrets.")
     elif not uploaded_images:
         st.warning("Please upload at least one avatar image!")
     elif not dialogue_text.strip():
         st.warning("Please enter some dialogue script!")
     else:
-        with st.spinner("Processing character voice and generating real MP4 video via Replicate SVD... Please wait."):
+        with st.spinner("Processing character voice and generating real MP4 video... Please wait."):
             try:
-                # Map language to code
                 lang_mapping = {
                     "English": "en",
                     "Japanese": "ja",
@@ -92,8 +89,6 @@ if st.button("Generate MP4 Video & Voice"):
                     "German": "de"
                 }
                 lang_code = lang_mapping.get(language, "en")
-                
-                # Voice generation speed adjustment based on character
                 is_slow = True if "Child" in character_type else False
                 
                 tts = gTTS(text=dialogue_text, lang=lang_code, slow=is_slow)
@@ -103,17 +98,16 @@ if st.button("Generate MP4 Video & Voice"):
                 st.success(f"Generated {character_type} voice in {language} successfully!")
                 st.audio(audio_path, format='audio/mp3')
                 
-                # Real Replicate API Execution for Video
-                st.info("Connecting to Stable Video Diffusion (SVD) on Replicate...")
+                st.info("Connecting to Stable Video Diffusion on Replicate...")
                 
-                # Saving uploaded image temporarily to pass to API
                 temp_image_path = "temp_avatar.jpg"
                 with open(temp_image_path, "wb") as f:
                     f.write(uploaded_images[0].getbuffer())
                 
                 with open(temp_image_path, "rb") as image_file:
+                    # Updated to latest stable video diffusion version
                     output = replicate.run(
-                        "stability-ai/stable-video-diffusion:3f0457b441db2c35b6358186fa5846e6f8fb33ce0440306bb803f393863484f9",
+                        "stability-ai/stable-video-diffusion:9bbef67ad4b63021fb0327f4ca75a40b4353347b749007f3521d96078f4b045e",
                         input={
                             "input_image": image_file,
                             "sizing_strategy": "maintain aspect ratio",
