@@ -1,7 +1,7 @@
 import streamlit as st
 from gtts import gTTS
 import os
-import requests
+import replicate
 
 # Page Configuration
 st.set_page_config(page_title="AI Talking Video Generator", page_icon="🎥", layout="centered")
@@ -11,7 +11,10 @@ st.write("Generate real MP4 videos with custom avatar motion, multi-character vo
 
 # Sidebar - API Key Configuration
 st.sidebar.header("🔑 API Settings")
-api_key = st.sidebar.text_input("Enter Replicate / HF API Key:", type="password", help="Required to render real MP4 video via SVD cloud servers.")
+api_key = st.sidebar.text_input("Enter Replicate API Key:", type="password", help="Required to render real MP4 video via SVD cloud servers.")
+
+if api_key:
+    os.environ["REPLICATE_API_TOKEN"] = api_key
 
 # 1. Multi-Image Upload Option
 st.subheader("1. Upload Avatar Images")
@@ -28,7 +31,7 @@ if uploaded_images:
         with cols[idx % 3]:
             st.image(img, caption=f"Avatar {idx+1}", use_column_width=True)
 
-# 2. Voice & Character Settings
+# 2. Character Voice & Language Settings
 st.subheader("2. Character Voice & Language Settings")
 col1, col2 = st.columns(2)
 
@@ -61,12 +64,14 @@ dialogue_text = st.text_area(
 # 5. Generate Button
 st.subheader("5. Generate Synchronized MP4 Video")
 if st.button("Generate MP4 Video & Voice"):
-    if not uploaded_images:
+    if not api_key:
+        st.warning("⚠️ Please enter your Replicate API Key in the sidebar first!")
+    elif not uploaded_images:
         st.warning("Please upload at least one avatar image!")
     elif not dialogue_text.strip():
         st.warning("Please enter some dialogue script!")
     else:
-        with st.spinner("Processing character voice, aligning motion prompt, and generating MP4 video..."):
+        with st.spinner("Processing character voice and generating real MP4 video via Replicate SVD... Please wait."):
             try:
                 # Map language to code
                 lang_mapping = {
@@ -89,14 +94,30 @@ if st.button("Generate MP4 Video & Voice"):
                 st.success(f"Generated {character_type} voice in {language} successfully!")
                 st.audio(audio_path, format='audio/mp3')
                 
-                # MP4 Video API Pipeline Check
-                if api_key:
-                    st.info("API Key detected! Sending request to Stable Video Diffusion (SVD) rendering pipeline...")
-                    # Real rendering API request executes here
+                # Real Replicate API Execution for Video
+                st.info("Connecting to Stable Video Diffusion (SVD) on Replicate...")
+                
+                # Saving uploaded image temporarily to pass to API
+                temp_image_path = "temp_avatar.jpg"
+                with open(temp_image_path, "wb") as f:
+                    f.write(uploaded_images[0].getbuffer())
+                
+                with open(temp_image_path, "rb") as image_file:
+                    output = replicate.run(
+                        "stability-ai/stable-video-diffusion:3f0457b441db2c35b6358186fa5846e6f8fb33ce0440306bb803f393863484f9",
+                        input={
+                            "input_image": image_file,
+                            "sizing_strategy": "maintain aspect ratio",
+                            "motion_bucket_id": 127,
+                            "fps": 7
+                        }
+                    )
+                
+                if output:
                     st.success("MP4 Video successfully rendered!")
+                    st.video(output)
                 else:
-                    st.warning("⚠️ Enter your API Key in the sidebar to complete real MP4 video cloud rendering.")
-                    st.info(f"Motion Configured: '{video_prompt if video_prompt else 'Standard Facial Animation'}'")
+                    st.error("Video generation did not return an output.")
                     
             except Exception as e:
-                st.error(f"An error occurred: {e}")
+                st.error(f"An error occurred during API execution: {e}")
