@@ -10,8 +10,7 @@ st.title("🎬 Professional AI Talking Video Generator")
 st.write("Generate real MP4 videos with custom avatar motion, multi-character voices, and AI synchronization!")
 
 # --- DIRECT SECURE TOKEN CONFIGURATION ---
-# Hardcoded directly to eliminate any Streamlit Secrets parsing/401 errors completely
-api_token = "r8_YMIZQdXqMKwysl42SRBq1C6sefVK8uR1C0wg7"
+api_token = "r8_FG00ecw3JqgZADKuF7DEuV3RIQlU5fX1nFD4x"
 os.environ["REPLICATE_API_TOKEN"] = api_token
 
 # 1. Multi-Image Upload Option
