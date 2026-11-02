@@ -1,63 +1,38 @@
 import streamlit as st
 from gtts import gTTS
 import os
-import base64
+import requests
 
 # Page Configuration
 st.set_page_config(
-    page_title="Free AI Talking Video & Presenter Studio", 
+    page_title="100% Free AI Talking Video Generator", 
     page_icon="🎬", 
     layout="centered"
 )
 
-# Custom Styling for Professional Animated Look
-st.markdown("""
-    <style>
-    .main-title {
-        font-size: 28px;
-        font-weight: bold;
-        color: #4F46E5;
-        text-align: center;
-    }
-    .sub-text {
-        text-align: center;
-        color: #6B7280;
-        margin-bottom: 20px;
-    }
-    @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
-        70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(79, 70, 229, 0); }
-        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
-    }
-    .avatar-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px 0;
-    }
-    .animated-avatar {
-        border-radius: 50%;
-        width: 180px;
-        height: 180px;
-        object-fit: cover;
-        border: 4px solid #4F46E5;
-        animation: pulse 2s infinite;
-    }
-    </style>
-""", unsafe_allow_html=True)
+st.title("🎬 Free AI Talking Video Generator")
+st.write("Generate real videos and voiceovers completely free using Hugging Face (No Credit Card Required)!")
 
-st.markdown('<p class="main-title">🎬 Free Professional AI Presenter Studio</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-text">Create synchronized multi-language voice avatars instantly (100% Free & No Card Required)</p>', unsafe_allow_html=True)
+# 1. Hugging Face Free Token Input
+st.subheader("1. Hugging Face Free API Token")
+hf_token = st.text_input(
+    "Enter your free Hugging Face Token (Get it free on huggingface.co):", 
+    type="password",
+    placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+)
 
-# 1. Avatar Upload
-st.subheader("1. Upload Avatar Image")
+# 2. Image Upload
+st.subheader("2. Upload Avatar Image")
 uploaded_image = st.file_uploader(
     "Choose an avatar image (PNG, JPG, JPEG)", 
     type=["png", "jpg", "jpeg"]
 )
 
-# 2. Character Voice & Language Settings
-st.subheader("2. Character Voice & Language Settings")
+if uploaded_image:
+    st.image(uploaded_image, caption="Selected Avatar", width=250)
+
+# 3. Voice Settings
+st.subheader("3. Character Voice Settings")
 col1, col2 = st.columns(2)
 
 with col1:
@@ -72,13 +47,6 @@ with col2:
         ["English", "Urdu", "Japanese", "Spanish", "French", "German"]
     )
 
-# 3. Video Motion Prompt
-st.subheader("3. Video Motion & Action Prompt")
-video_prompt = st.text_input(
-    "Describe desired presentation style/motion:",
-    placeholder="e.g., professional corporate speech, expressive storytelling..."
-)
-
 # 4. Dialogue Script
 st.subheader("4. Enter Dialogue Script")
 dialogue_text = st.text_area(
@@ -87,21 +55,18 @@ dialogue_text = st.text_area(
 )
 
 # 5. Generate Button
-st.subheader("Generate AI Presentation")
-if st.button("✨ Generate Presentation & Voice", type="primary"):
-    if not uploaded_image:
-        st.warning("⚠️ Please upload an avatar image first!")
+st.subheader("Generate Free MP4 Video & Voice")
+if st.button("✨ Generate Free Video & Voice", type="primary"):
+    if not hf_token.strip():
+        st.warning("⚠️ Please enter your free Hugging Face API token!")
+    elif not uploaded_image:
+        st.warning("⚠️ Please upload an avatar image!")
     elif not dialogue_text.strip():
         st.warning("⚠️ Please enter some dialogue script!")
     else:
-        with st.spinner("Synthesizing studio-quality voice and preparing presentation..."):
+        with st.spinner("Processing voice and rendering video via Free AI... Please wait a moment."):
             try:
-                # Save uploaded image temporarily
-                temp_image_path = "temp_avatar.jpg"
-                with open(temp_image_path, "wb") as f:
-                    f.write(uploaded_image.getbuffer())
-                
-                # Language mapping
+                # 1. Generate Voice using gTTS
                 lang_mapping = {
                     "English": "en",
                     "Urdu": "ur",
@@ -113,40 +78,40 @@ if st.button("✨ Generate Presentation & Voice", type="primary"):
                 lang_code = lang_mapping.get(language, "en")
                 is_slow = True if "Child" in character_type else False
                 
-                # Generate Voice
                 tts = gTTS(text=dialogue_text, lang=lang_code, slow=is_slow)
                 audio_path = "generated_voice.mp3"
                 tts.save(audio_path)
                 
-                st.success(f"🎉 Generated {character_type} voice in {language} successfully!")
+                st.success(f"🎉 Generated {character_type} voice successfully!")
+                st.audio(audio_path, format='audio/mp3')
                 
-                if video_prompt.strip():
-                    st.info(f"🎥 Active Motion Theme: {video_prompt}")
+                st.info("Connecting to Hugging Face Free AI Model to render video...")
                 
-                # Display Animated Presentation Box
-                st.markdown("### 🎙️ Live AI Presenter Preview")
+                # 2. Call Hugging Face Free Inference API for Image-to-Video
+                API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-video-diffusion-img2vid-xt"
+                headers = {"Authorization": f"Bearer {hf_token}"}
                 
-                # Read image as base64 to display inside HTML animation
-                with open(temp_image_path, "rb") as img_file:
-                    encoded_img = base64.b64encode(img_file.read()).decode()
+                image_bytes = uploaded_image.getvalue()
+                response = requests.post(API_URL, headers=headers, data=image_bytes)
                 
-                st.markdown(f"""
-                    <div class="avatar-container">
-                        <img src="data:image/jpeg;base64,{encoded_img}" class="animated-avatar" />
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                # Audio Player
-                st.audio(audio_path, format='audio/mp3', autoplay=True)
-                
-                # Download Button
-                with open(audio_path, "rb") as file:
-                    st.download_button(
-                        label="📥 Download Presentation Audio (MP3)",
-                        data=file,
-                        file_name="ai_presentation.mp3",
-                        mime="audio/mp3"
-                    )
+                if response.status_code == 200:
+                    video_path = "generated_video.mp4"
+                    with open(video_path, "wb") as f:
+                        f.write(response.content)
+                    
+                    st.success("🎉 Real MP4 Video Successfully Generated!")
+                    st.video(video_path)
+                    
+                    # Download button for video
+                    with open(video_path, "video/mp4") as v_file:
+                        st.download_button(
+                            label="📥 Download Video MP4",
+                            data=v_file,
+                            file_name="ai_talking_video.mp4",
+                            mime="video/mp4"
+                        )
+                else:
+                    st.error(f"API Error ({response.status_code}): Model might be loading. Please wait a minute and try again, or check your token.")
                     
             except Exception as e:
                 st.error(f"An error occurred: {e}")
