@@ -1,111 +1,71 @@
+import os
 import streamlit as st
 from gtts import gTTS
-import os
-import requests
+from moviepy.editor import ImageClip, AudioFileClip
 
-# Page Configuration
-st.set_page_config(
-    page_title="Professional AI Talking Video Generator", 
-    page_icon="🎬", 
-    layout="centered"
-)
+st.set_page_config(page_title="Free AI Talking Video Generator", page_icon="🎥")
 
-st.title("🎬 Professional AI Talking Video Generator")
-st.write("Generate real MP4 videos and multi-language voiceovers instantly and seamlessly!")
+st.title("🎥 Free AI Talking Video Generator")
+st.write("Create your talking character videos 100% free without any API tokens or accounts!")
 
-# --- SECURE FIXED HUGGING FACE TOKEN ---
-# (Yahan aap apna Hugging Face token aik baar likh dein gay, yوزر ko kabhi nazar nahi aey ga)
-HF_TOKEN = "yahan_apna_huggingface_token_likh_lein"  # e.g., "hf_xxxxxxxxxxxxxxxx"
+# 1. Text input for speech
+text_input = st.text_area("Enter text for your character to speak:", "Hello! Welcome to my AI generated video.")
 
-# 1. Image Upload
-st.subheader("1. Upload Avatar Image")
-uploaded_image = st.file_uploader(
-    "Choose an avatar image (PNG, JPG, JPEG)", 
-    type=["png", "jpg", "jpeg"]
-)
+# 2. Character selection or image upload
+character_option = st.selectbox("Choose a Character:", ["Default Avatar", "Custom Image"])
 
-if uploaded_image:
-    st.image(uploaded_image, caption="Selected Avatar", width=250)
+image_path = "default_avatar.jpg"  # Make sure you have a default image or handle uploads
 
-# 2. Voice Settings
-st.subheader("2. Character Voice & Language Settings")
-col1, col2 = st.columns(2)
+if character_option == "Custom Image":
+    uploaded_file = st.file_uploader("Upload character image (JPG/PNG)", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        with open("temp_avatar.jpg", "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        image_path = "temp_avatar.jpg"
+else:
+    # Create a simple placeholder image if default doesn't exist
+    if not os.path.exists(image_path):
+        from PIL import Image, ImageDraw
+        img = Image.new('RGB', (512, 512), color = (73, 109, 137))
+        d = ImageDraw.Draw(img)
+        d.text((150, 250), "AI Character", fill=(255, 255, 255))
+        img.save(image_path)
 
-with col1:
-    character_type = st.selectbox(
-        "Select Character Voice Type",
-        ["Woman (Female)", "Man (Male)", "Child / Kid"]
-    )
-
-with col2:
-    language = st.selectbox(
-        "Select Voice Language", 
-        ["English", "Urdu", "Japanese", "Spanish", "French", "German"]
-    )
-
-# 3. Dialogue Script
-st.subheader("3. Enter Dialogue Script")
-dialogue_text = st.text_area(
-    "Type what your character should say:", 
-    placeholder="Hello! Welcome to my AI talking video project..."
-)
-
-# 4. Generate Button
-st.subheader("Generate Professional MP4 Video")
-if st.button("✨ Generate Video & Voice", type="primary"):
-    if not uploaded_image:
-        st.warning("⚠️ Please upload an avatar image!")
-    elif not dialogue_text.strip():
-        st.warning("⚠️ Please enter some dialogue script!")
+# 3. Generate Video Button
+if st.button("Generate Talking Video"):
+    if not text_input.strip():
+        st.warning("Please enter some text first!")
     else:
-        with st.spinner("Processing voice and rendering real MP4 video... Please wait a moment."):
+        with st.spinner("Generating audio and rendering video... Please wait."):
             try:
-                # 1. Generate Voice using gTTS
-                lang_mapping = {
-                    "English": "en",
-                    "Urdu": "ur",
-                    "Japanese": "ja",
-                    "Spanish": "es",
-                    "French": "fr",
-                    "German": "de"
-                }
-                lang_code = lang_mapping.get(language, "en")
-                is_slow = True if "Child" in character_type else False
+                # Step A: Generate Audio using gTTS
+                audio_file = "output_audio.mp3"
+                tts = gTTS(text=text_input, lang='en')
+                tts.save(audio_file)
                 
-                tts = gTTS(text=dialogue_text, lang=lang_code, slow=is_slow)
-                audio_path = "generated_voice.mp3"
-                tts.save(audio_path)
+                # Step B: Create Video using MoviePy (Combining Image + Audio)
+                video_file = "output_video.mp4"
+                audio_clip = AudioFileClip(audio_file)
+                duration = audio_clip.duration
                 
-                st.success(f"🎉 Generated {character_type} voice successfully!")
-                st.audio(audio_path, format='audio/mp3')
+                # Create image clip with the same duration as audio
+                image_clip = ImageClip(image_path).set_duration(duration)
+                video_clip = image_clip.set_audio(audio_clip)
                 
-                st.info("Rendering real MP4 video via AI...")
+                # Write video file
+                video_clip.write_videofile(video_file, fps=24, codec='libx264', audio_codec='aac')
                 
-                # 2. Call Hugging Face API Automatically
-                API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-video-diffusion-img2vid-xt"
-                headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+                st.success("Video generated successfully!")
                 
-                image_bytes = uploaded_image.getvalue()
-                response = requests.post(API_URL, headers=headers, data=image_bytes)
+                # Step C: Display Video & Download Option
+                st.video(video_file)
                 
-                if response.status_code == 200:
-                    video_path = "generated_video.mp4"
-                    with open(video_path, "wb") as f:
-                        f.write(response.content)
-                    
-                    st.success("🎉 MP4 Video Successfully Generated!")
-                    st.video(video_path)
-                    
-                    # Download button for video
-                    with open(video_path, "video/mp4") as v_file:
-                        st.download_button(
-                            label="📥 Download Video MP4",
-                            data=v_file,
-                            file_name="ai_talking_video.mp4",
-                            mime="video/mp4"
-                        )
-                else:
-                    st.error(f"API Error ({response.status_code}): Please make sure you added your valid Hugging Face token in the code!")
-                    
+                with open(video_file, "rb") as file:
+                    st.download_button(
+                        label="Download Video",
+                        data=file,
+                        file_name="ai_talking_video.mp4",
+                        mime="video/mp4"
+                    )
             except Exception as e:
                 st.error(f"An error occurred: {e}")
