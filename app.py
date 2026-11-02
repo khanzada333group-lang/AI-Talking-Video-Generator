@@ -5,24 +5,20 @@ import requests
 
 # Page Configuration
 st.set_page_config(
-    page_title="100% Free AI Talking Video Generator", 
+    page_title="Professional AI Talking Video Generator", 
     page_icon="🎬", 
     layout="centered"
 )
 
-st.title("🎬 Free AI Talking Video Generator")
-st.write("Generate real videos and voiceovers completely free using Hugging Face (No Credit Card Required)!")
+st.title("🎬 Professional AI Talking Video Generator")
+st.write("Generate real MP4 videos and multi-language voiceovers instantly and seamlessly!")
 
-# 1. Hugging Face Free Token Input
-st.subheader("1. Hugging Face Free API Token")
-hf_token = st.text_input(
-    "Enter your free Hugging Face Token (Get it free on huggingface.co):", 
-    type="password",
-    placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-)
+# --- SECURE FIXED HUGGING FACE TOKEN ---
+# (Yahan aap apna Hugging Face token aik baar likh dein gay, yوزر ko kabhi nazar nahi aey ga)
+HF_TOKEN = "yahan_apna_huggingface_token_likh_lein"  # e.g., "hf_xxxxxxxxxxxxxxxx"
 
-# 2. Image Upload
-st.subheader("2. Upload Avatar Image")
+# 1. Image Upload
+st.subheader("1. Upload Avatar Image")
 uploaded_image = st.file_uploader(
     "Choose an avatar image (PNG, JPG, JPEG)", 
     type=["png", "jpg", "jpeg"]
@@ -31,8 +27,8 @@ uploaded_image = st.file_uploader(
 if uploaded_image:
     st.image(uploaded_image, caption="Selected Avatar", width=250)
 
-# 3. Voice Settings
-st.subheader("3. Character Voice Settings")
+# 2. Voice Settings
+st.subheader("2. Character Voice & Language Settings")
 col1, col2 = st.columns(2)
 
 with col1:
@@ -47,24 +43,22 @@ with col2:
         ["English", "Urdu", "Japanese", "Spanish", "French", "German"]
     )
 
-# 4. Dialogue Script
-st.subheader("4. Enter Dialogue Script")
+# 3. Dialogue Script
+st.subheader("3. Enter Dialogue Script")
 dialogue_text = st.text_area(
     "Type what your character should say:", 
     placeholder="Hello! Welcome to my AI talking video project..."
 )
 
-# 5. Generate Button
-st.subheader("Generate Free MP4 Video & Voice")
-if st.button("✨ Generate Free Video & Voice", type="primary"):
-    if not hf_token.strip():
-        st.warning("⚠️ Please enter your free Hugging Face API token!")
-    elif not uploaded_image:
+# 4. Generate Button
+st.subheader("Generate Professional MP4 Video")
+if st.button("✨ Generate Video & Voice", type="primary"):
+    if not uploaded_image:
         st.warning("⚠️ Please upload an avatar image!")
     elif not dialogue_text.strip():
         st.warning("⚠️ Please enter some dialogue script!")
     else:
-        with st.spinner("Processing voice and rendering video via Free AI... Please wait a moment."):
+        with st.spinner("Processing voice and rendering real MP4 video... Please wait a moment."):
             try:
                 # 1. Generate Voice using gTTS
                 lang_mapping = {
@@ -85,11 +79,11 @@ if st.button("✨ Generate Free Video & Voice", type="primary"):
                 st.success(f"🎉 Generated {character_type} voice successfully!")
                 st.audio(audio_path, format='audio/mp3')
                 
-                st.info("Connecting to Hugging Face Free AI Model to render video...")
+                st.info("Rendering real MP4 video via AI...")
                 
-                # 2. Call Hugging Face Free Inference API for Image-to-Video
+                # 2. Call Hugging Face API Automatically
                 API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-video-diffusion-img2vid-xt"
-                headers = {"Authorization": f"Bearer {hf_token}"}
+                headers = {"Authorization": f"Bearer {HF_TOKEN}"}
                 
                 image_bytes = uploaded_image.getvalue()
                 response = requests.post(API_URL, headers=headers, data=image_bytes)
@@ -99,7 +93,7 @@ if st.button("✨ Generate Free Video & Voice", type="primary"):
                     with open(video_path, "wb") as f:
                         f.write(response.content)
                     
-                    st.success("🎉 Real MP4 Video Successfully Generated!")
+                    st.success("🎉 MP4 Video Successfully Generated!")
                     st.video(video_path)
                     
                     # Download button for video
@@ -111,7 +105,7 @@ if st.button("✨ Generate Free Video & Voice", type="primary"):
                             mime="video/mp4"
                         )
                 else:
-                    st.error(f"API Error ({response.status_code}): Model might be loading. Please wait a minute and try again, or check your token.")
+                    st.error(f"API Error ({response.status_code}): Please make sure you added your valid Hugging Face token in the code!")
                     
             except Exception as e:
                 st.error(f"An error occurred: {e}")
